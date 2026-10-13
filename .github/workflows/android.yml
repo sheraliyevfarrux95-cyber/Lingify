@@ -9,18 +9,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Extract project
         run: |
-          ls -la
           test -f Lingify_Project.zip || { echo "Lingify_Project.zip repoda yo'q"; exit 1; }
           unzip -q Lingify_Project.zip -d source
           find source -name gradlew -exec chmod +x {} \;
-          find source -name "settings.gradle*"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -28,8 +26,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android licenses
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -37,8 +36,7 @@ jobs:
       - name: Build APK
         run: |
           SETTINGS=$(find source -name "settings.gradle*" | head -n 1)
-          DIR=$(dirname "$SETTINGS")
-          cd "$DIR"
+          cd "$(dirname "$SETTINGS")"
           if [ -f ./gradlew ]; then ./gradlew assembleDebug --stacktrace; else gradle assembleDebug --stacktrace; fi
 
       - name: Save APK
